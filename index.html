@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>arm64-vm — a virtual ARM64 machine that boots to a desktop</title>
+<meta name="description" content="A complete aarch64 computer in QEMU: Linux 6.18, Alpine 3.24, X11 on virtio-gpu, SSH, and a signed Android APK.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<nav><div class="wrap nav-in"><span class="brand"><i></i>arm64-vm</span><div class="nav-links"><a href="index.html">Machine</a><a href="index.html#desktop">Desktop</a><a href="index.html#app">App</a><a href="build.html">Build</a><a class="nav-gh" href="https://github.com/aviruprs-lgtm/arm64-vm">GitHub</a></div></div></nav>
+<header><div class="wrap">
+<div class="label">QEMU virt · aarch64 · Alpine 3.24</div>
+<h1>A virtual <em>ARM64</em> machine that boots to a desktop</h1>
+<p class="lead">Not a container and not an emulated shell — a complete aarch64 computer: a Linux 6.18 kernel, a real ext4 root on a virtio block device, working networking, an SSH daemon, and an X11 session that comes up on its own. It runs under QEMU's TCG translator, so it boots on any x86-64 host with no ARM hardware and no KVM.</p>
+<div class="cta"><a class="btn btn-primary" href="https://github.com/aviruprs-lgtm/arm64-vm/releases/latest">Download the VM <small>102 MB · 2 parts</small></a><a class="btn btn-ghost" href="https://github.com/aviruprs-lgtm/arm64-vm/releases/latest/download/AArch64Inspector.apk">AArch64 Inspector <small>17 KB</small></a></div>
+<div class="stats"><div class="stat"><b>6.18.58</b><span>Linux kernel</span></div><div class="stat"><b>130</b><span>apk packages</span></div><div class="stat"><b>768 MiB</b><span>ext4 root disk</span></div><div class="stat"><b>~20 s</b><span>cold boot to X</span></div></div>
+</div></header>
+<section id="machine"><div class="wrap">
+<div class="label">01 — the machine</div>
+<h2>What is actually running</h2>
+<div class="tablewrap" style="margin-top:20px"><table><thead><tr><th>Component</th><th>Choice</th></tr></thead><tbody>
+<tr><td>Board</td><td>QEMU <code>virt</code> — <code>linux,dummy-virt</code>, GICv3, PCIe ECAM</td></tr>
+<tr><td>CPU</td><td>Cortex-A72, ARMv8-A — implementer <code>0x41</code>, part <code>0xd08</code></td></tr>
+<tr><td>Kernel</td><td>Linux <code>6.18.58-0-virt</code>, Alpine <code>linux-virt</code> config</td></tr>
+<tr><td>Userland</td><td>Alpine 3.24, musl, BusyBox 1.37, apk</td></tr>
+<tr><td>Root</td><td>ext4, <code>arm64root</code>, 768 MiB, on <code>/dev/vda</code></td></tr>
+<tr><td>Display</td><td>virtio-gpu 1280×800, VNC on <code>127.0.0.1:5900</code></td></tr>
+<tr><td>X server</td><td>Xorg 21.1.25, <code>modesetting</code> — no <code>xorg.conf</code></td></tr>
+<tr><td>Desktop</td><td>twm + xterm via <code>/root/.xinitrc</code></td></tr>
+<tr><td>Network</td><td>virtio-net NAT, guest <code>10.0.2.15</code>; sshd on <code>:2222</code></td></tr>
+</tbody></table></div>
+</div></section>
+<section id="desktop"><div class="wrap">
+<div class="label">02 — the desktop</div>
+<h2>It really does boot to a GUI</h2>
+<p class="lead">Nothing is configured by hand. <code>/etc/inittab</code> respawns the session on tty1, which runs <code>xinit</code>; Xorg finds the virtio-gpu DRM device and picks its built-in modesetting driver; <code>/root/.xinitrc</code> paints the root window and starts twm and xterm.</p>
+<figure style="margin-top:24px"><div class="shot"><img src="https://github.com/aviruprs-lgtm/arm64-vm/releases/download/v1.0/screenshot.png" alt="The X11 desktop inside the virtual machine: a twm-decorated xterm on a dark navy root window." width="1024" height="640"></div><figcaption><b>fig 1</b> — the emulated framebuffer, captured via QEMU's monitor <code>screendump</code></figcaption></figure>
+<div class="grid2" style="margin-top:22px"><div class="card"><span class="n">VIEW IT</span><h3>Any VNC client</h3><p>Connect to <code>127.0.0.1:5900</code>. Keyboard and mouse arrive as USB HID events.</p></div><div class="card"><span class="n">TUNE IT</span><h3>Mode, terminals, WMs</h3><p><code>xrandr -s 1024x768</code> changes mode. <code>apk add icewm</code> then edit <code>/root/.xinitrc</code>.</p></div></div>
+</div></section>
+<section id="app"><div class="wrap">
+<div class="label">03 — also in this project</div>
+<h2>AArch64 Inspector</h2>
+<p class="lead">An Android app built alongside the VM, from the same question: what is this machine, really? It reports supported ABIs, CPU cores, <code>/proc/cpuinfo</code> implementer and part, memory, and benchmarks the CPU.</p>
+<div class="grid3" style="margin-top:22px"><div class="card"><span class="n">SIZE</span><h3>17 KB, pure DEX</h3><p>No native libraries, so it is not ABI-locked.</p></div><div class="card"><span class="n">TARGETS</span><h3>Android 5.0 to 14</h3><p>minSdk 21, targetSdk 34, v1 + v2 + v3 signed.</p></div><div class="card"><span class="n">INSTALL</span><h3>Sideload</h3><p>Tap to install, or <code>adb install</code>.</p></div></div>
+<div class="cta"><a class="btn btn-primary" href="https://github.com/aviruprs-lgtm/arm64-vm/releases/latest/download/AArch64Inspector.apk">Download the APK <small>17 KB</small></a><a class="btn btn-ghost" href="build.html">Build the VM</a></div>
+<span class="hash">SHA-256 &nbsp; 160a91eb3e17608090daa8c9cbecdc22e691ea14afce8ed710172721d1701b64</span>
+</div></section>
+<footer><div class="wrap fin"><span>arm64-vm — built and verified end to end</span><span><a href="https://github.com/aviruprs-lgtm/arm64-vm" style="color:var(--teal)">github.com/aviruprs-lgtm/arm64-vm</a></span></div></footer>
+</body>
+</html>
