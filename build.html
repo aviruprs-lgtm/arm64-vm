@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>arm64-vm — how it boots, and how to run it</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<nav><div class="wrap nav-in"><span class="brand"><i></i>arm64-vm</span><div class="nav-links"><a href="index.html">Machine</a><a href="index.html#desktop">Desktop</a><a href="index.html#app">App</a><a href="build.html">Build</a><a class="nav-gh" href="https://github.com/aviruprs-lgtm/arm64-vm">GitHub</a></div></div></nav>
+<section id="boot"><div class="wrap">
+<div class="label">01 — how it boots</div>
+<h2>Two stages, like a real distribution</h2>
+<p class="lead">The kernel has <code>CONFIG_VIRTIO_BLK=m</code> and <code>CONFIG_EXT4_FS=m</code>, so it cannot mount its own root. The boot is staged.</p>
+<div class="flow" style="margin-top:24px"><div class="step"><span style="font-family:var(--mono);font-size:11px;color:var(--teal)">STAGE 1</span><h3>Initramfs</h3><p>BusyBox plus the eight modules needed. Loads <code>virtio_pci</code>, <code>virtio_blk</code> and <code>ext4</code>, then waits for <code>/dev/vda</code>.</p></div><div class="arrow">→</div><div class="step"><span style="font-family:var(--mono);font-size:11px;color:var(--teal)">STAGE 2</span><h3>switch_root</h3><p>Mounts the ext4 root read-write and hands over to <code>/sbin/init</code>.</p></div><div class="arrow">→</div><div class="step"><span style="font-family:var(--mono);font-size:11px;color:var(--teal)">STAGE 3</span><h3>Userspace</h3><p><code>vm-rc</code> remounts rw, runs DHCP, loads the GPU and USB HID drivers, starts sshd — then getty and X.</p></div></div>
+<div class="note"><b>Kernel detail.</b> Alpine ships <code>vmlinuz-virt</code> as a PE32+ EFI-stub wrapping a gzip payload. Handed straight to the kernel loader, QEMU enters the stub and hangs with no output. The build extracts the inner <code>Image</code> and boots that.</div>
+</div></section>
+<section id="run"><div class="wrap">
+<div class="label">02 — run it</div>
+<h2>Boot it yourself</h2>
+<p class="lead">QEMU 6.0 or newer with aarch64 system emulation is the only requirement. The release carries the machine as two parts; join them back into one archive, unpack it, and start the launcher. Full commands are in the repository README.</p>
+<div class="grid2" style="margin-top:24px"><div class="card"><span class="n">STEP 1</span><h3>Download</h3><p>Grab both parts from the <a href="https://github.com/aviruprs-lgtm/arm64-vm/releases/latest" style="color:var(--teal)">latest release</a> and concatenate them in order. The result is a 102 MB xz archive.</p></div><div class="card"><span class="n">STEP 2</span><h3>Unpack and run</h3><p>Extract the archive and start <code>run.sh</code>. Ctrl-A X quits QEMU; the serial console is on the terminal you started it from.</p></div></div>
+<div class="grid2" style="margin-top:18px"><div class="card"><span class="n">DESKTOP</span><h3>VNC on 5900</h3><p>Point any VNC viewer at <code>127.0.0.1:5900</code>. The X session starts on its own a few seconds after boot.</p></div><div class="card"><span class="n">SHELL</span><h3>SSH on 2222</h3><p>Connect to <code>127.0.0.1:2222</code> as <code>root</code>, password <code>arm64vm</code>. The same login works on the serial console.</p></div></div>
+<div class="grid2" style="margin-top:18px"><div class="card"><span class="n">TUNING</span><h3>Environment</h3><ul><li><code>MEM</code> guest RAM in MiB (default 448)</li><li><code>SMP</code> vCPUs (default 2)</li><li><code>TB</code> TCG translation cache in MiB</li><li><code>SSH_PORT</code>, <code>VNC_DISPLAY</code> port remapping</li></ul></div><div class="card"><span class="n">CONTENTS</span><h3>In the archive</h3><ul><li><code>Image</code> — 35 MiB raw kernel</li><li><code>initramfs.cpio.gz</code> — stage 1</li><li><code>rootfs.ext4</code> — 768 MiB disk</li><li><code>run.sh</code>, <code>README.md</code>, <code>src/</code></li></ul></div></div>
+<div class="cta"><a class="btn btn-primary" href="https://github.com/aviruprs-lgtm/arm64-vm/releases/latest">Go to the release</a><a class="btn btn-ghost" href="https://github.com/aviruprs-lgtm/arm64-vm#readme">Read the README</a></div>
+<div class="note"><b>Two parts.</b> The archive is 102 MB, past the publishing pipeline's per-file limit, so it ships as two halves. Concatenating them reproduces the original file exactly; each part's SHA-256 is listed on the release.</div>
+<div class="note"><b>Emulation only.</b> No KVM — the guest is interpreted ARMv8-A, so expect 10–40x slower than native.</div>
+</div></section>
+<footer><div class="wrap fin"><span>arm64-vm — built and verified end to end</span><span><a href="https://github.com/aviruprs-lgtm/arm64-vm" style="color:var(--teal)">github.com/aviruprs-lgtm/arm64-vm</a></span></div></footer>
+</body>
+</html>
